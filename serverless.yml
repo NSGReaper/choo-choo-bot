@@ -1,0 +1,75 @@
+service: choo-choo-bot
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  profile: serverless
+  runtime: nodejs16.x
+  httpApi:
+    id: 0d0q81e9ea #discordIntegration
+  environment:
+    DYNAMODB_GAMES_TABLE: ${self:service}-games-${sls:stage}
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - httpApi: 'POST /game-event'
+  createCommands:
+    handler: handler.createCommands
+    environment:
+      DISCORD_APP_ID: ${self:custom.discordSecrets.DISCORD_APP_ID}
+      DISCORD_PUBLIC_KEY: ${self:custom.discordSecrets.DISCORD_PUBLIC_KEY}
+      DISCORD_BOT_TOKEN: ${self:custom.discordSecrets.DISCORD_BOT_TOKEN}
+  discordInteractions:
+    handler: index.interactions
+    events:
+      - httpApi: 'POST /event'
+    environment:
+      DISCORD_APP_ID: ${self:custom.discordSecrets.DISCORD_APP_ID}
+      DISCORD_PUBLIC_KEY: ${self:custom.discordSecrets.DISCORD_PUBLIC_KEY}
+      DISCORD_BOT_TOKEN: ${self:custom.discordSecrets.DISCORD_BOT_TOKEN}
+  poll:
+    handler: gameUpdates.poll
+    events:
+      - schedule: rate(10 minutes)
+
+resources:
+  Resources:
+    PlayerTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-players-${sls:stage}
+        AttributeDefinitions:
+          - AttributeName: player_id
+            AttributeType: "N"
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: player_id
+            KeyType: HASH
+    GameTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-games-${sls:stage}
+        AttributeDefinitions:
+          - AttributeName: game_id
+            AttributeType: "N"
+        BillingMode: PAY_PER_REQUEST
+        TimeToLiveSpecification: 
+            AttributeName: ttl
+            Enabled: true
+        KeySchema:
+          - AttributeName: game_id
+            KeyType: HASH
+
+custom:
+  discordSecrets: ${ssm:/aws/reference/secretsmanager/${sls:stage}/choo-choo-bot}
+  scripts:
+    hooks:
+      'deploy:finalize': aws lambda invoke --region us-east-1 --function-name choo-choo-bot-dev-createCommands --invocation-type Event invoke.log
+
+plugins:
+  - serverless-dynamodb-local
+  - serverless-plugin-scripts
+

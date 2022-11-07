@@ -1,0 +1,29 @@
+{
+  "name": "choo-choo-bot",
+  "version": "1.0.0",
+  "description": "Discord bot for handling 18xx game updates",
+  "main": "gameUpdates.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1248.0",
+    "axios": "^1.1.3",
+    "discord.js": "^14.6.0",
+    "serverless-dynamodb-client": "^0.0.2",
+    "slash-create": "^5.10.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.3",
+    "serverless-dynamodb-local": "^0.2.40",
+    "serverless-offline": "^11.2.3",
+    "serverless-plugin-scripts": "^1.0.2"
+  },
+  "scripts": {
+    "test": "mocha",
+    "commands": "node setupCommands.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
