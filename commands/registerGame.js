@@ -4,13 +4,14 @@ const { registerGame } = require('../lib/Game')
 module.exports = class RegisterGameCommand extends SlashCommand {
   constructor(creator) {
     super(creator, {
-      name: 'game',
+      name: 'addgame',
       description: 'Registers an 18xx game to post announcements in this channel.',
+      dmPermission: false,
       options: [{
         type: CommandOptionType.NUMBER,
         name: 'id',
         description: 'Enter the 18xx game id',
-        required: true,
+        required: true
       }]
     });
 
@@ -26,6 +27,6 @@ module.exports = class RegisterGameCommand extends SlashCommand {
         subscriptions: [{guildId, channelId}]
     })
 
-    return `> Hello @${discordId}! We have registered for updates to https://18xx.games/game/${gameId} in this channel.`;
+    ctx.send(`> Hello ${ctx.member.mention}! I will post updates for https://18xx.games/game/${gameId} in this channel.`)
   }
 }

@@ -4,8 +4,8 @@ const { registerPlayer } = require('../lib/Player')
 module.exports = class RegisterPlayerCommand extends SlashCommand {
   constructor(creator) {
     super(creator, {
-      name: 'player',
-      description: 'Says hello to you.',
+      name: 'addplayer',
+      description: 'Links your 18xx player to your discord username.',
       options: [{
         type: CommandOptionType.NUMBER,
         name: 'id',
@@ -19,11 +19,12 @@ module.exports = class RegisterPlayerCommand extends SlashCommand {
   }
 
   async run(ctx) {
-    const playerId = ctx.options.player
-    const discordId = ctx.member.user.username
+    const playerId = ctx.options.id
+    const discordId = ctx.member.user.id
+    const discordTag = ctx.member.mention
 
-    registerPlayer(playerId, discordId)
+    registerPlayer(playerId, discordId, discordTag)
 
-    return `> Hello @${discordId}!`;
+    ctx.send(`> Hello ${discordTag}! I will now tag you when I mention 18xx player https://18xx.games/profile/${playerId}.`)
   }
 }
