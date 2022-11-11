@@ -4,10 +4,10 @@ const discordBot = require('./lib/discordBot')
 const get = require('lodash.get')
 const { Player } = require('./lib/Player')
 const Articles = require('articles')
-const { DynamoDBLockClientFactory } = require('@deliveryhero/dynamodb-lock')
+const { dynamoDBLockClientFactory } = require('@deliveryhero/dynamodb-lock')
 const dynamodb = require('serverless-dynamodb-client')
 
-const lockClient = DynamoDBLockClientFactory(dynamodb.doc)
+const lockClient = dynamoDBLockClientFactory(dynamodb.doc)
 const LOCK_GROUP = 'game'
 const LOCK_ID = 'updates'
 const LOCK_OPTIONS = {
@@ -26,6 +26,7 @@ module.exports.push = async (event) => {
   if (event.body.text) {
     const webhookContents = WEBHOOK_REGEX.exec(event.body.text)
     if (webhookContents != null) {
+      console.debug(`Attempting to get lock`, {LOCK_ID, LOCK_GROUP, LOCK_OPTIONS})
       const lock = await lockClient.lock(LOCK_GROUP, LOCK_ID, LOCK_OPTIONS)
       const playerId = webhookContents.groups.playerId
       const updateMessage = webhookContents.groups.updateMessage

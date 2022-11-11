@@ -35,6 +35,18 @@ provider:
             Fn::GetAtt:
               - GameTable
               - Arn
+        - Effect: "Allow"
+          Action:
+          - dynamodb:Query
+          - dynamodb:Scan
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DeleteItem
+          Resource:
+            Fn::GetAtt:
+              - DistributedLocksStore
+              - Arn
   environment:
     DYNAMODB_GAMES_TABLE: ${self:service}-games-${sls:stage}
     DYNAMODB_PLAYERS_TABLE: ${self:service}-players-${sls:stage}
