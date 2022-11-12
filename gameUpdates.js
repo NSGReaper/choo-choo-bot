@@ -7,14 +7,13 @@ const Articles = require('articles')
 const { dynamoDBLockClientFactory } = require('@deliveryhero/dynamodb-lock')
 const dynamodb = require('serverless-dynamodb-client')
 
-const lockClient = dynamoDBLockClientFactory(dynamodb.doc)
-const LOCK_GROUP = 'game'
-const LOCK_ID = 'updates'
-const LOCK_OPTIONS = {
+const lockClient = dynamoDBLockClientFactory(dynamodb.doc, {
   tableName: process.env.LOCK_STORE_TABLE,
   ttlKey: 'ttl',
   ttlInMs: 15 * 60 * 1000
-}
+})
+const LOCK_GROUP = 'game'
+const LOCK_ID = 'updates'
 
 const LAST_NOTIFICATION_AT = 'notified_at'
 const LAST_NOTIFIED_PLAYERS = 'notified'
@@ -26,8 +25,8 @@ module.exports.push = async (event) => {
   if (event.body.text) {
     const webhookContents = WEBHOOK_REGEX.exec(event.body.text)
     if (webhookContents != null) {
-      console.debug(`Attempting to get lock`, {LOCK_ID, LOCK_GROUP, LOCK_OPTIONS})
-      const lock = await lockClient.lock(LOCK_GROUP, LOCK_ID, LOCK_OPTIONS)
+      console.debug(`Attempting to get lock`, {LOCK_ID, LOCK_GROUP})
+      const lock = await lockClient.lock(LOCK_GROUP, LOCK_ID)
       const playerId = webhookContents.groups.playerId
       const updateMessage = webhookContents.groups.updateMessage
       const gameId = webhookContents.groups.gameId
@@ -59,7 +58,7 @@ module.exports.push = async (event) => {
 }
 
 module.exports.poll = async (event) => {
-  const lock = await lockClient.lock(LOCK_GROUP, LOCK_ID, LOCK_OPTIONS)
+  const lock = await lockClient.lock(LOCK_GROUP, LOCK_ID)
 
   try {
     const relevantGames = await getGamesOfInterest()
@@ -135,15 +134,7 @@ module.exports.poll = async (event) => {
   }
 
   return {
-    statusCode: 200,
-    body: JSON.stringify(
-      {
-        message: `Send updates for ${updatedGamesCount} games`,
-        input: event,
-      },
-      null,
-      2
-    ),
+    statusCode: 201
   };
 };
 
