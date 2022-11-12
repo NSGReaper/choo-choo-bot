@@ -70,6 +70,7 @@ functions:
       - httpApi: 'POST /event'
   poll:
     handler: gameUpdates.poll
+    timeout: 30
     events:
       - schedule: rate(10 minutes)
 

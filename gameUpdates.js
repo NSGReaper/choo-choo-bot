@@ -10,7 +10,7 @@ const dynamodb = require('serverless-dynamodb-client')
 const lockClient = dynamoDBLockClientFactory(dynamodb.doc, {
   tableName: process.env.LOCK_STORE_TABLE,
   ttlKey: 'ttl',
-  ttlInMs: 15 * 60 * 1000
+  ttlInMs: 5 * 60 * 1000
 })
 const LOCK_GROUP = 'game'
 const LOCK_ID = 'updates'
@@ -25,8 +25,8 @@ module.exports.push = async (event) => {
   if (event.body.text) {
     const webhookContents = WEBHOOK_REGEX.exec(event.body.text)
     if (webhookContents != null) {
-      console.debug(`Attempting to get lock`, {LOCK_ID, LOCK_GROUP})
-      const lock = await lockClient.lock(LOCK_GROUP, LOCK_ID)
+      console.debug(`Attempting to get lock`, {LOCK_ID, LOCK_GROUP,})
+      const lock = await lockClient.lock(LOCK_GROUP, LOCK_ID, { leaseDurationInMs: 5000, prolongEveryMs: 2000 })
       const playerId = webhookContents.groups.playerId
       const updateMessage = webhookContents.groups.updateMessage
       const gameId = webhookContents.groups.gameId
@@ -58,7 +58,7 @@ module.exports.push = async (event) => {
 }
 
 module.exports.poll = async (event) => {
-  const lock = await lockClient.lock(LOCK_GROUP, LOCK_ID)
+  const lock = await lockClient.lock(LOCK_GROUP, LOCK_ID, { leaseDurationInMs: 20000, prolongEveryMs: 5000 })
 
   try {
     const relevantGames = await getGamesOfInterest()
@@ -87,7 +87,7 @@ module.exports.poll = async (event) => {
     const sendOutgoingMessagesForGamesPromises = await Promise.all(currentRelevantGamesData.concat(missedRelevantGamesData)
       .map(async (currentGameData) => {
         const game = relevantGames.find((relevantGame) => relevantGame.gameId === currentGameData.id)
-        const lastUpdated = game.gameData.updated_at
+        const lastUpdated = game.gameData.updated_at || 0
         const existingActingPlayer = get(game, 'gameData.acting[0]')
         const existingStatus = game.gameData.status
 
@@ -107,7 +107,6 @@ module.exports.poll = async (event) => {
             `${hasActingPlayerChanged ? 'changed' : 'not changed'} because the current acting player is ` + 
             `${currentActingPlayer} and the previous one was ${existingActingPlayer}`)
           if (hasActingPlayerChanged) {
-            
             return sendNotification(game)
           }
 
@@ -167,7 +166,7 @@ async function buildGameUpdateMessageForActiveGame(game) {
   const data = game.gameData
   const activePlayerId = get(data, 'acting[0]')
   const activePlayerDiscordTag = await getDiscordMentionForPlayerId(activePlayerId)
-  const activePlayerName = data.players.filter((player) => player.id === activePlayerId).name
+  const activePlayerName = data.players.find((player) => player.id === activePlayerId).name
   return `https://18xx.games/game/${data.id} is on ${Articles.articlize(data.round)} and it is ${activePlayerDiscordTag || activePlayerName}'s turn.`
 }
 
@@ -178,7 +177,7 @@ async function buildGameUpdateMessageForFinishedGame(game) {
   if (result && Object.getOwnPropertyNames(result).length) {
     const playerResults = (await promise.all(Object.getOwnPropertyNames(result).map(async (playerId) => {
       const playerScore = parseInt(result[playerId])
-      const playerName = data.filter((player) => player.id === playerId)
+      const playerName = data.players.find((player) => player.id === playerId).name
       return { id: playerId, score: playerScore, name: playerName, mention: await getDiscordMentionForPlayerId(playerId)}
     }))).sort((a, b) => a.score - b.score)
 
@@ -195,7 +194,7 @@ async function buildGameUpdateMessageForFinishedGame(game) {
 async function getDiscordMentionForPlayerId(id) {
   const player = new Player(id)
   if (await player.exists()) {
-    return player.discordTag || null
+    return player.playerData.discordTag || null
   }
   return null
 }
