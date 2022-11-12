@@ -1,5 +1,7 @@
-const path = require('path');
 const { AWSLambdaServer, SlashCreator } = require('slash-create');
+
+const registerGame = require('./commands/registerGame')
+const registerPlayer = require('./commands/registerPlayer')
 
 const creator = new SlashCreator({
     applicationID: process.env.DISCORD_APP_ID,
@@ -31,6 +33,7 @@ creator
     // The first argument is required, the second argument is the name or "target" of the export.
     // It defaults to 'interactions', so it would not be strictly necessary here.
     .withServer(new AWSLambdaServer(module.exports, 'interactions'))
-    .registerCommandsIn(path.join(__dirname, 'commands'))
+    .registerCommands([registerGame, registerPlayer])
+    //.registerCommandsIn(path.join(__dirname, 'commands'))
 
 setTimeout(() => { console.log(module.exports) }, 10)

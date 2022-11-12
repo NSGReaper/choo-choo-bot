@@ -1,8 +1,8 @@
-const path = require('path');
 const {once} = require('events');
-const { AWSLambdaServer, SlashCreator } = require('slash-create');
+const { SlashCreator } = require('slash-create');
 
-
+const registerGame = require('./commands/registerGame')
+const registerPlayer = require('./commands/registerPlayer')
 
 module.exports.hello = async (event) => {
   console.log(JSON.stringify(event, null, 2))
@@ -33,8 +33,10 @@ module.exports.createCommands = async (event) => {
 
   const synced = once(creator, 'synced')
 
+  
   creator
-    .registerCommandsIn(path.join(__dirname, 'commands'))
+    //.registerCommandsIn(path.join(__dirname, 'commands'))
+    .registerCommands([registerGame, registerPlayer])
     .syncCommands()
 
   await synced

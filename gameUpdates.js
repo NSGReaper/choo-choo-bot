@@ -129,7 +129,7 @@ module.exports.poll = async (event) => {
     const updatedGamesCount = sendOutgoingMessagesForGamesPromises.filter((p) => p != null).length
     console.log(`Sent updates for ${updatedGamesCount} games`)
   } finally {
-    lockClient.releaseLock(lock)
+    await lockClient.releaseLock(lock)
   }
 
   return {

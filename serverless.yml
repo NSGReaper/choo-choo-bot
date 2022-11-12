@@ -122,11 +122,21 @@ resources:
 
 custom:
   discordSecrets: ${ssm:/aws/reference/secretsmanager/${sls:stage}/choo-choo-bot}
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: true
+    keepNames: true
   scripts:
     hooks:
       'deploy:finalize': aws lambda invoke --region us-east-1 --function-name choo-choo-bot-dev-createCommands --invocation-type Event invoke.log
 
 plugins:
-  - serverless-offline
+  - serverless-esbuild
   - serverless-dynamodb-local
   - serverless-plugin-scripts
+  - serverless-offline
+
+package:
+  individually: true
+  excludeDevDependencies: true
